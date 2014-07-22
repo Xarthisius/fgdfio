@@ -1,32 +1,3 @@
-! $Id$
-!
-! PIERNIK Code Copyright (C) 2006-2012 Michal Hanasz
-!
-!    This file is part of PIERNIK code.
-!
-!    PIERNIK is free software: you can redistribute it and/or modify
-!    it under the terms of the GNU General Public License as published by
-!    the Free Software Foundation, either version 3 of the License, or
-!    (at your option) any later version.
-!
-!    PIERNIK is distributed in the hope that it will be useful,
-!    but WITHOUT ANY WARRANTY; without even the implied warranty of
-!    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!    GNU General Public License for more details.
-!
-!    You should have received a copy of the GNU General Public License
-!    along with PIERNIK.  If not, see <http://www.gnu.org/licenses/>.
-!
-!    Initial implementation of PIERNIK code was based on TVD split MHD code by
-!    Ue-Li Pen
-!        see: Pen, Arras & Wong (2003) for algorithm and
-!             http://www.cita.utoronto.ca/~pen/MHD
-!             for original source code "mhd.f90"
-!
-!    For full list of developers see $PIERNIK_HOME/license/pdt.txt
-!
-
-#include "piernik.h"
 
 !>
 !! \brief Module that contains overloaded wrappers for HDF5 routines (create attribute, dataset etc)
@@ -41,7 +12,7 @@ module helpers_hdf5
    public :: create_attribute, create_dataset, create_corefile
 
    enum, bind(C)
-      enumerator :: I_ONE = 1, I_TWO
+      enumerator :: I_ONE = 1, I_TWO, I_THREE
    end enum
 
    integer(kind=SIZE_T), parameter :: default_increment = 1024**2 !< Specifies the increment by which allocated
@@ -59,6 +30,8 @@ module helpers_hdf5
    end interface
 
    interface create_dataset
+      module procedure create_dataset_int4_dim3
+      module procedure create_dataset_int8_dim3
       module procedure create_dataset_int4_dim2
       module procedure create_dataset_int8_dim2
       module procedure create_dataset_int4_dim1
@@ -107,6 +80,73 @@ contains
       return
    end subroutine create_corefile
 
+
+! Dataset creation:
+
+
+!> \brief Create 32-bit integer dataset (rank-2 array) in the given place_id.
+!
+   subroutine create_dataset_int4_dim3(place, dname, ddata)
+
+      use hdf5,          only: HID_T, HSIZE_T, H5T_STD_I32LE, &
+          &                    h5dcreate_f, h5dclose_f, h5screate_simple_f, h5sclose_f, h5dwrite_f, &
+          &                    h5kind_to_type, H5_INTEGER_KIND
+      use iso_c_binding, only: c_ptr, c_loc
+
+      implicit none
+
+      integer(HID_T),                             intent(in) :: place !< object id where dataset will be created
+      character(len=*),                           intent(in) :: dname !< name of dataset
+      integer(kind=4), dimension(:,:,:), pointer, intent(in) :: ddata !< data used to create dataset
+
+      integer(HID_T)                                       :: dset, space, mem_type
+      integer(kind=4)                                      :: hdferr
+      integer(HSIZE_T), dimension(3)                       :: dims
+      type(c_ptr)                                          :: f_ptr
+
+      dims = shape(ddata)
+      call h5screate_simple_f(I_THREE, dims, space, hdferr)
+      call h5dcreate_f(place, dname, H5T_STD_I32LE, space, dset, hdferr)
+      f_ptr = c_loc(ddata(1,1,1))
+      mem_type = h5kind_to_type(int(kind(ddata(1,1,1)), kind=4), H5_INTEGER_KIND)
+      call h5dwrite_f(dset, mem_type, f_ptr, hdferr)
+      call h5dclose_f(dset,  hdferr)
+      call h5sclose_f(space, hdferr)
+
+   end subroutine create_dataset_int4_dim3
+
+!> \brief Create 64-bit integer dataset (rank-2 array) in the given place_id.
+!
+   subroutine create_dataset_int8_dim3(place, dname, ddata)
+
+      use hdf5,          only: HID_T, HSIZE_T, H5T_STD_I64LE, &
+          &                    h5dcreate_f, h5dclose_f, h5screate_simple_f, h5sclose_f, h5dwrite_f, &
+          &                    h5kind_to_type, H5_INTEGER_KIND
+      use iso_c_binding, only: c_ptr, c_loc
+
+      implicit none
+
+      integer(HID_T),                           intent(in) :: place !< object id where dataset will be created
+      character(len=*),                         intent(in) :: dname !< name of dataset
+      integer(kind=8), dimension(:,:,:), pointer, intent(in) :: ddata !< data used to create dataset
+
+      integer(HID_T)                                       :: dset, space, mem_type
+      integer(kind=4)                                      :: hdferr
+      integer(HSIZE_T), dimension(3)                       :: dims
+      type(c_ptr)                                          :: f_ptr
+
+      dims = shape(ddata)
+      call h5screate_simple_f(I_THREE, dims, space, hdferr)
+      call h5dcreate_f(place, dname, H5T_STD_I64LE, space, dset, hdferr)
+      f_ptr = c_loc(ddata(1,1,1))
+      mem_type = h5kind_to_type(int(kind(ddata(1,1,1)), kind=4), H5_INTEGER_KIND)
+      call h5dwrite_f(dset, mem_type, f_ptr, hdferr)
+      call h5dclose_f(dset,  hdferr)
+      call h5sclose_f(space, hdferr)
+
+   end subroutine create_dataset_int8_dim3
+
+
 !> \brief Create 32-bit integer dataset (rank-2 array) in the given place_id.
 !
    subroutine create_dataset_int4_dim2(place, dname, ddata)
@@ -136,7 +176,7 @@ contains
       call h5dclose_f(dset,  hdferr)
       call h5sclose_f(space, hdferr)
 
-   end subroutine create_dataset_int4_dim2
+    end subroutine create_dataset_int4_dim2
 
 !> \brief Create 64-bit integer dataset (rank-2 array) in the given place_id.
 !
