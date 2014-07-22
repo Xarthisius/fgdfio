@@ -1,32 +1,3 @@
-! $Id$
-!
-! PIERNIK Code Copyright (C) 2006-2012 Michal Hanasz
-!
-!    This file is part of PIERNIK code.
-!
-!    PIERNIK is free software: you can redistribute it and/or modify
-!    it under the terms of the GNU General Public License as published by
-!    the Free Software Foundation, either version 3 of the License, or
-!    (at your option) any later version.
-!
-!    PIERNIK is distributed in the hope that it will be useful,
-!    but WITHOUT ANY WARRANTY; without even the implied warranty of
-!    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-!    GNU General Public License for more details.
-!
-!    You should have received a copy of the GNU General Public License
-!    along with PIERNIK.  If not, see <http://www.gnu.org/licenses/>.
-!
-!    Initial implementation of PIERNIK code was based on TVD split MHD code by
-!    Ue-Li Pen
-!        see: Pen, Arras & Wong (2003) for algorithm and
-!             http://www.cita.utoronto.ca/~pen/MHD
-!             for original source code "mhd.f90"
-!
-!    For full list of developers see $PIERNIK_HOME/license/pdt.txt
-!
-
-#include "piernik.h"
 
 !>
 !! \brief Implementation of Grid Data Format
@@ -35,7 +6,8 @@ module gdf
 ! pulled by HDF5
    implicit none
    private
-   public :: gdf_create_root_datasets, gdf_create_simulation_parameters, gdf_create_format_stamp, gdf_create_field_types, gdf_field_type, fmax
+   public :: gdf_create_root_datasets, gdf_create_simulation_parameters, gdf_create_format_stamp
+   public :: gdf_create_field_types, gdf_field_type, fmax
    public :: gdf_parameters_T, gdf_root_datasets_T
 
    integer, parameter :: fmax = 60
@@ -133,8 +105,7 @@ contains
 
    end subroutine gdf_create_simulation_parameters
 
-   subroutine gdf_create_format_stamp(file)
-
+   subroutine gdf_create_format_stamp(file, software_name, software_version)
       use hdf5, only: HID_T, h5gcreate_f, h5gclose_f
       use h5lt, only: h5ltset_attribute_string_f
 
@@ -144,12 +115,15 @@ contains
       integer(HID_T)             :: g_id
       integer(kind=4)            :: error
 
+      character(len=*), intent(in) :: software_name
+      character(len=*), intent(in) :: software_version
+
       character(len=*), parameter :: gname = 'gridded_data_format'
       character(len=*), parameter :: gname2 = '/gridded_data_format'
 
       call h5gcreate_f(file, gname, g_id, error)
-      call h5ltset_attribute_string_f(g_id, gname2, 'data_software', 'piernik', error )
-      call h5ltset_attribute_string_f(g_id, gname2, 'data_software_version', '1.0', error )
+      call h5ltset_attribute_string_f(g_id, gname2, 'data_software', software_name, error )
+      call h5ltset_attribute_string_f(g_id, gname2, 'data_software_version', software_version, error )
       call h5gclose_f(g_id, error)
 
    end subroutine gdf_create_format_stamp
@@ -199,13 +173,13 @@ contains
       allocate(this%grid_parent_id(size(cg_all_parents,1)), source=cg_all_parents)
    end subroutine gdf_root_datasets_init_existing
 
-   subroutine gdf_root_datasets_init_new(this, n)
+   subroutine gdf_root_datasets_init_new(this, dimensionality, n)
       implicit none
       class(gdf_root_datasets_T), intent(inout) :: this
-      integer(kind=4),            intent(in)    :: n
+      integer(kind=4),            intent(in)    :: n, dimensionality
 
-      allocate(this%grid_dimensions(3, n))
-      allocate(this%grid_left_index(3, n))
+      allocate(this%grid_dimensions(dimensionality, n))
+      allocate(this%grid_left_index(dimensionality, n))
       allocate(this%grid_level(n))
       allocate(this%grid_particle_count(1, n))
       allocate(this%grid_parent_id(n))
@@ -222,20 +196,21 @@ contains
       if (associated(this%grid_particle_count)) deallocate(this%grid_particle_count)
    end subroutine gdf_root_datasets_cleanup
 
-   subroutine gdf_parameters_init(this)
+   subroutine gdf_parameters_init(this, dimensionality)
       implicit none
       class(gdf_parameters_T), intent(inout) :: this
+      integer, intent(in) :: dimensionality
 
       allocate(this%refine_by(1))
       allocate(this%dimensionality(1))
       allocate(this%cosmological_simulation(1))
       allocate(this%num_ghost_zones(1))
       allocate(this%field_ordering(1))
-      allocate(this%domain_dimensions(3))
-      allocate(this%domain_left_edge(3))
-      allocate(this%domain_right_edge(3))
+      allocate(this%domain_dimensions(dimensionality))
+      allocate(this%domain_left_edge(dimensionality))
+      allocate(this%domain_right_edge(dimensionality))
       allocate(this%current_time(1))
-      allocate(this%boundary_conditions(6))
+      allocate(this%boundary_conditions(dimensionality*2))
       allocate(this%unique_identifier)
    end subroutine gdf_parameters_init
 
