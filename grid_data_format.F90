@@ -7,17 +7,23 @@ module gdf
    implicit none
    private
    public :: gdf_create_root_datasets, gdf_create_simulation_parameters, gdf_create_format_stamp
-   public :: gdf_create_field_types, gdf_field_type, fmax
+   public :: gdf_create_field_types, gdf_field_type_T, fmax, gdf_write_field_type
    public :: gdf_parameters_T, gdf_root_datasets_T
 
    integer, parameter :: fmax = 60
 
-   type :: gdf_field_type
-      real(kind=8)        :: f2cgs
-      integer(kind=8)     :: stag
-      character(len=fmax) :: fu
-      character(len=fmax) :: fn
-   end type gdf_field_type
+   type :: gdf_field_type_T
+      real(kind=8), dimension(:), pointer     :: field_to_cgs !< Conversion between field units and cgs
+      integer(kind=4), dimension(:), pointer  :: staggering !< 0 for cell-centered, 1 for face-centered, 2 for vertex-centered. 
+      character(len=fmax), pointer   :: field_units !< A string representation of the units
+      character(len=fmax), pointer   :: field_name !< A description of the field
+      character(len=fmax), pointer   :: variable_name !< The field name e.g. "velocity_x"
+
+    contains
+      procedure :: init => gdf_field_type_init
+      procedure :: cleanup => gdf_field_type_finalize
+
+   end type gdf_field_type_T
 
    integer, parameter :: uniqid_len = 12
 
@@ -128,34 +134,44 @@ contains
 
    end subroutine gdf_create_format_stamp
 
-   subroutine gdf_create_field_types(filename, o_func)
-
-      use hdf5, only: HID_T, h5gcreate_f, h5gclose_f, h5fopen_f, h5fclose_f, H5F_ACC_RDWR_F, h5open_f, h5close_f
+   subroutine gdf_create_field_types(place, field_types)
+      ! Make the group for field types
+      use hdf5, only: HID_T, h5gcreate_f, h5gclose_f
 
       implicit none
-
-      character(len=*), intent(in) :: filename
-      interface
-         subroutine o_func(group_id)
-            use hdf5, only: HID_T
-            implicit none
-            integer(HID_T), intent(in) :: group_id
-         end subroutine o_func
-      end interface
-
-      integer(HID_T) :: g_id, file_id
-      integer(kind=4) :: error
+      integer(HID_T), intent(inout) :: place
+      type(gdf_field_type_T), dimension(:), intent(in) :: field_types
+      integer(HID_T) :: g_id 
+      integer(kind=4) :: error, i
       character(len=*), parameter :: gname = 'field_types'
 
-      call h5open_f(error)
-      call h5fopen_f(filename, H5F_ACC_RDWR_F, file_id, error)
-      call h5gcreate_f(file_id, gname, g_id, error)
-      call o_func(g_id)
+      call h5gcreate_f(place, gname, g_id, error)
+      do i = lbound(field_types, 1), ubound(field_types, 1)
+         call gdf_write_field_type(g_id, field_types(i))
+      end do
       call h5gclose_f(g_id, error)
-      call h5fclose_f(file_id, error)
-      call h5close_f(error)
-
+ 
    end subroutine gdf_create_field_types
+
+   subroutine gdf_write_field_type(place, field_type)
+     use hdf5, only: HID_T, h5gopen_f, h5gcreate_f, h5gclose_f
+     use helpers_hdf5, only: create_attribute
+
+     implicit none
+
+     class(gdf_field_type_T) :: field_type
+     integer(HID_T), intent(inout) :: place
+     integer(HID_T)             :: g_id
+     integer(kind=4) :: error
+
+     call h5gcreate_f(place, field_type%variable_name, g_id, error)
+     call create_attribute(g_id, 'field_name', field_type%field_name)
+     call create_attribute(g_id, 'field_to_cgs', field_type%field_to_cgs)
+     call create_attribute(g_id, 'field_units', field_type%field_units)
+     call create_attribute(g_id, 'staggering', field_type%staggering)
+     call h5gclose_f(g_id, error)
+
+   end subroutine gdf_write_field_type
 
    subroutine gdf_root_datasets_init_existing(this, cg_all_n_b, cg_all_rl, cg_all_off, cg_all_parents, cg_all_particles)
       implicit none
@@ -230,4 +246,28 @@ contains
       deallocate(this%boundary_conditions)
       deallocate(this%unique_identifier)
    end subroutine gdf_parameters_finalize
+
+   subroutine gdf_field_type_init(this)
+      implicit none
+      class(gdf_field_type_T), intent(inout) :: this
+
+      allocate(this%field_to_cgs(1))
+      allocate(this%staggering(1))
+      allocate(this%field_units)
+      allocate(this%field_name)
+      allocate(this%variable_name)
+
+    end subroutine gdf_field_type_init
+
+   subroutine gdf_field_type_finalize(this)
+      implicit none
+      class(gdf_field_type_T), intent(inout) :: this
+
+      deallocate(this%field_to_cgs)
+      deallocate(this%staggering)
+      deallocate(this%field_units)
+      deallocate(this%field_name)
+      deallocate(this%variable_name)
+
+    end subroutine gdf_field_type_finalize
 end module gdf
