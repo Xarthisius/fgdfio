@@ -71,14 +71,14 @@ contains
   subroutine write_sac_dataset_real8_dim3(place, dname, file_dimensions, memory_dimensions, data, plist_id)
     use hdf5
 
-    integer(HID_T),                intent(in)  :: place             !< location to write dataset
-    character(len=*),              intent(in)  :: dname             !< name of dataset
-    integer(kind=8), dimension(3), intent(in)  :: file_dimensions   !< file array shape
-    integer(kind=8), dimension(3), intent(in)  :: memory_dimensions !< memory (rank) array shape
-    integer(HID_T),                intent(inout)  :: plist_id          !< access property list id
+    integer(HID_T),                intent(in)    :: place             !< location to write dataset
+    character(len=*),              intent(in)    :: dname             !< name of dataset
+    integer(kind=8), dimension(3), intent(in)    :: file_dimensions   !< file array shape
+    integer(kind=8), dimension(3), intent(in)    :: memory_dimensions !< memory (rank) array shape
+    integer(HID_T),                intent(inout) :: plist_id          !< access property list id
 
-    integer(kind=8), dimension(3)  :: offset            !< the array index to start writing at (zero indexed)
-    integer(kind=8), dimension(3)  :: count             !< the number of points to write.
+    integer(kind=8), dimension(3), parameter  :: offset=(/ 0, 0, 0 /)            !< the array index to start writing at (zero indexed)
+    integer(kind=8), dimension(3) :: count             !< the number of points to write.
 
     integer(HID_T) :: file_space, mem_space !< File and memory spaces
     integer(HID_T) :: dset_id
@@ -87,6 +87,7 @@ contains
     real(kind=8), dimension(:,:,:) :: data             !< array to be written
 
     integer(kind=4) :: error
+    count = memory_dimensions
 
     ! Create the data space for the X array. 
     call h5screate_simple_f(dimensionality, file_dimensions, file_space, error)
