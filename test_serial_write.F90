@@ -79,8 +79,7 @@ program test
    call h5gcreate_f(file_id, "data", dom_g_id, error) !Create /data
    call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
-   ! Create datasets
-   call write_sac_dataset(doml_g_id, field_types(1)%variable_name, domain_dimensions, domain_dimensions, data, plist_id)
+   ! WRITE ACTUAL DATA HERE
 
    call h5fclose_f(file_id, error)
    call h5close_f(error)

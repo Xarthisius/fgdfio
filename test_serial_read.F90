@@ -43,7 +43,8 @@ program test
   print*,  software_name, software_version
 
   call gdf_read_field_types(file_id, field_types)
-  
+
+  ! READ THE ACTUAL DATA HERE.  
 
   ! Close the file and interface
   call h5fclose_f(file_id, error)
