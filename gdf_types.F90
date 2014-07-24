@@ -4,6 +4,7 @@
 ! This code is Copyright Kacper Kowalik and Stuart Mumford 2014.
 ! This code is released under the terms of the modified BSD licence, which should be included with the code.
 !>
+
 module gdf_types
 ! This module provides custom types that hold information regarding the different
 ! groups and structures in the GDF file layout.
