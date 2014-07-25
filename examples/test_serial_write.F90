@@ -1,7 +1,7 @@
-program test
-   use gdf
+program test_read
    use hdf5
-   use sac_gdf
+   use gdf
+   use gdf_datasets
 
    implicit none
 
@@ -23,7 +23,8 @@ program test
    
    integer(kind=4), parameter                    :: dimensionality=3
    integer(kind=8), dimension(dimensionality), parameter :: domain_dimensions=(/ 10, 10, 10 /)
-   real(kind=8), dimension(10,10,10) :: data
+   real(kind=8), dimension(10,10,10), target :: data
+   class(*), dimension(:, :, :), pointer :: d_ptr
 
    ! Simulation Parameters
    call gdf_sp%init(dimensionality)
@@ -56,15 +57,6 @@ program test
    call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, error, access_prp=plist_id)
    !close plist here?!?
 
-   ! Write software stamp to gdf file
-   call gdf_create_format_stamp(file_id, software_name, software_version)
-
-   ! Write simulation_parameters
-   call gdf_create_simulation_parameters(file_id, gdf_sp)
-
-   ! Write root datasets
-   call gdf_create_root_datasets(file_id, rd)
-
    ! Write Field Type information
    call field_types(1)%init()
    field_types(1)%field_to_cgs = 1
@@ -73,13 +65,20 @@ program test
    field_types(1)%variable_name = "velocity_x"
    field_types(1)%field_name = "Velocity in the x direction"
 
-   call gdf_create_field_types(file_id, field_types)
 
+   ! Write everything to the file
+   call gdf_write_file(file_id, software_name, software_version, rd, gdf_sp, field_types)
+   
+
+   ! Now write the datasets
    ! Create field groups
    call h5gcreate_f(file_id, "data", dom_g_id, error) !Create /data
    call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
    ! WRITE ACTUAL DATA HERE
+
+   d_ptr => data
+   call write_dataset(doml_g_id, 'velocity_x', d_ptr, plist_id)
 
    call h5fclose_f(file_id, error)
    call h5close_f(error)

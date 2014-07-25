@@ -12,18 +12,96 @@ module gdf
 
   implicit none
   
+  private
   ! Functions for writing attributes and groups to file:
+  public :: gdf_write_file
   public :: gdf_create_root_datasets, gdf_create_simulation_parameters, gdf_create_format_stamp
-  public :: gdf_create_field_types, gdf_write_field_type
+  public :: gdf_create_field_types, gdf_write_field_type, gdf_create_particle_types
 
   ! Read routines
-  public :: gdf_read_root_datasets, gdf_read_format_stamp, gdf_read_simulation_parameters
+  public :: gdf_read_file
+  public :: gdf_read_root_datasets, gdf_read_format_stamp, gdf_read_simulation_parameters, gdf_read_field_types
   
   ! Types pulled from gdf_types
   public :: gdf_parameters_T, gdf_root_datasets_T, gdf_field_type_T
   
 contains
+
+  subroutine gdf_write_file(file_id, software_name, software_version, gdf_rd, gdf_sp, field_types)
+    ! Write all the information to the gdf file apart from the main data
+    ! Input:
+    ! file_id : file identifier
+    ! software_name, software version : strings
+    ! gdf_rd : gdf_root_datasets_T
+    ! gdf_sp : gdf_parameters_T
+    ! field_types : 1D array of gdf_field_type_T
+    use hdf5, only: HID_T
+    
+    implicit none
+    
+    integer(HID_T), intent(inout) :: file_id
+    character(len=*), intent(in) :: software_name, software_version
+    type(gdf_root_datasets_T), intent(in) :: gdf_rd
+    type(gdf_parameters_T), intent(in) :: gdf_sp
+    type(gdf_field_type_T), dimension(:), intent(in) :: field_types
+    
+    ! Write software stamp to gdf file
+    call gdf_create_format_stamp(file_id, software_name, software_version)
+    
+    ! Write simulation_parameters
+    call gdf_create_simulation_parameters(file_id, gdf_sp)
+    
+    ! Write root datasets
+    call gdf_create_root_datasets(file_id, gdf_rd)
+    
+    ! Write field types
+    call gdf_create_field_types(file_id, field_types)
+    
+    ! Write empty particle_types groups
+    call gdf_create_particle_types(file_id)
+    
+  end subroutine gdf_write_file
+
+
+
+  subroutine gdf_read_file(file_id, software_name, software_version, gdf_rd, gdf_sp, field_types)
+    ! Read all the information from the gdf file apart from the main data
+    ! Input:
+    ! file_id : file identifier
+    ! Output:
+    ! software_name, software version : strings
+    ! gdf_rd : gdf_root_datasets_T
+    ! gdf_sp : gdf_parameters_T
+    ! field_types : 1D array of gdf_field_type_T
+    use hdf5, only: HID_T
+    
+    implicit none
+    
+    integer(HID_T), intent(inout) :: file_id
+    character(len=*), intent(out) :: software_name, software_version
+    type(gdf_root_datasets_T), intent(out) :: gdf_rd
+    type(gdf_parameters_T), intent(out) :: gdf_sp
+    type(gdf_field_type_T), allocatable, dimension(:), intent(out) :: field_types
+    
+    ! Write software stamp to gdf file
+    call gdf_read_format_stamp(file_id, software_name, software_version)
+    
+    ! Write simulation_parameters
+    call gdf_read_simulation_parameters(file_id, gdf_sp)
+    
+    ! Write root datasets
+    call gdf_read_root_datasets(file_id, gdf_rd)
+    
+    ! Write field types
+    call gdf_read_field_types(file_id, field_types)
+    
+    ! Write empty particle_types groups
+    !call gdf_create_particle_types(file_id)
+    
+  end subroutine gdf_read_file
   
+
+
   subroutine gdf_create_root_datasets(file_id, rd)
     ! Write the datasets at the root of the GDF file.
     ! Input:
@@ -107,14 +185,34 @@ contains
     
     
     call h5gcreate_f(file_id, gname, g_id, error)
-    call h5ltset_attribute_string_f(g_id, gname2, 'data_software', software_name, error )
-    call h5ltset_attribute_string_f(g_id, gname2, 'data_software_version', software_version, error )
+    call h5ltset_attribute_string_f(g_id, gname2, 'data_software', software_name, error)
+    call h5ltset_attribute_string_f(g_id, gname2, 'data_software_version', software_version, error)
+    call h5ltset_attribute_string_f(g_id, gname2, 'format_version', '1.0', error)
     call h5gclose_f(g_id, error)
     
   end subroutine gdf_create_format_stamp
 
 
-  
+
+  subroutine gdf_create_particle_types(file_id)
+    ! Write the particle types group to the file
+    ! This is currently unsupported but the group is mandated by the specification
+    
+    use hdf5, only: HID_T, h5gcreate_f, h5gclose_f
+
+    implicit none
+
+    integer(HID_T), intent(in) :: file_id
+
+    integer(HID_T) :: g_id, error
+    
+    call h5gcreate_f(file_id, 'particle_types', g_id, error)
+    call h5gclose_f(g_id, error)
+    
+  end subroutine gdf_create_particle_types
+
+
+
   subroutine gdf_create_field_types(file_id, field_types)
     ! Write an array of field type information to the file.
     ! Input:
