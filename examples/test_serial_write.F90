@@ -21,34 +21,36 @@ program test_read
    character(len=*), parameter                   :: software_name="SAC"
    character(len=*), parameter                   :: software_version="ha what is a version"
    
-   integer(kind=4), parameter                    :: dimensionality=3
-   integer(kind=8), dimension(dimensionality), parameter :: domain_dimensions=(/ 10, 10, 10 /)
-   real(kind=8), dimension(10,10,10), target :: data
-   class(*), dimension(:, :, :), pointer :: d_ptr
+   integer(kind=4), parameter                    :: dimensionality=2
+   integer(kind=8), dimension(dimensionality), parameter :: domain_dimensions=(/ 10, 10 /)
+   real(kind=8), dimension(10,10), target :: data
+   class(*), dimension(:, :), pointer :: d_ptr
 
    ! Simulation Parameters
-   call gdf_sp%init(dimensionality)
-   gdf_sp%boundary_conditions = (/ 2, 2, 2, 2, 2, 2 /)
+   call gdf_sp%init()
+   gdf_sp%boundary_conditions = (/ 2, 2, 2, 2 /)
    gdf_sp%cosmological_simulation = 0
    gdf_sp%current_time = 0
    gdf_sp%dimensionality = dimensionality
    gdf_sp%domain_dimensions = domain_dimensions ! on disk
-   gdf_sp%domain_left_edge = (/ 0, 0, 0 /) !bottom left corner
-   gdf_sp%domain_right_edge = (/ 20, 20, 20 /) ! top right corner
+   gdf_sp%domain_left_edge = (/ 0, 0 /) !bottom left corner
+   gdf_sp%domain_right_edge = (/ 20, 20 /) ! top right corner
    gdf_sp%field_ordering = 1
    gdf_sp%num_ghost_zones = 0 !on disk
    gdf_sp%refine_by = 0
    gdf_sp%unique_identifier = "hellodave123"
 
    ! Initilize the data
-   call rd%init(dimensionality, 1)
+   call rd%init(1)
    
    rd%grid_parent_id = 0
-   rd%grid_left_index(:, 1) = (/ 0, 0, 0 /)
-   rd%grid_dimensions(:, 1) = domain_dimensions
+   rd%grid_left_index(:, 1) = (/ 0, 0 /)
+   rd%grid_dimensions(:, 1) = (/ 1, 1, 1 /)
+   rd%grid_dimensions(:dimensionality, 1) = domain_dimensions
    rd%grid_level = 0
    rd%grid_particle_count(:, 1) = (/ 0 /)
-   
+
+  
    ! Open file
    call h5open_f(error)
    ! Create a property access list (for MPI later on)
@@ -83,4 +85,4 @@ program test_read
    call h5fclose_f(file_id, error)
    call h5close_f(error)
 
-end program test
+ end program test_read

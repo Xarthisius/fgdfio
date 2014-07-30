@@ -98,16 +98,18 @@ contains
       allocate(this%grid_parent_id(size(cg_all_parents,1)), source=cg_all_parents)
    end subroutine gdf_root_datasets_init_existing
 
-   subroutine gdf_root_datasets_init_new(this, dimensionality, n)
+   subroutine gdf_root_datasets_init_new(this, n)
       implicit none
       class(gdf_root_datasets_T), intent(inout) :: this
-      integer(kind=4),            intent(in)    :: n, dimensionality
+      integer(kind=4),            intent(in)    :: n
+      integer :: i
 
-      allocate(this%grid_dimensions(dimensionality, n))
-      allocate(this%grid_left_index(dimensionality, n))
+      allocate(this%grid_dimensions(3, n))
+      allocate(this%grid_left_index(3, n))
       allocate(this%grid_level(n))
       allocate(this%grid_particle_count(1, n))
       allocate(this%grid_parent_id(n))
+         
    end subroutine gdf_root_datasets_init_new
 
    subroutine gdf_root_datasets_cleanup(this)
@@ -121,21 +123,20 @@ contains
       if (associated(this%grid_particle_count)) deallocate(this%grid_particle_count)
    end subroutine gdf_root_datasets_cleanup
 
-   subroutine gdf_parameters_init(this, dimensionality)
+   subroutine gdf_parameters_init(this)
       implicit none
       class(gdf_parameters_T), intent(inout) :: this
-      integer, intent(in) :: dimensionality
 
       allocate(this%refine_by(1))
       allocate(this%dimensionality(1))
       allocate(this%cosmological_simulation(1))
       allocate(this%num_ghost_zones(1))
       allocate(this%field_ordering(1))
-      allocate(this%domain_dimensions(dimensionality))
-      allocate(this%domain_left_edge(dimensionality))
-      allocate(this%domain_right_edge(dimensionality))
+      allocate(this%domain_dimensions(3))
+      allocate(this%domain_left_edge(3))
+      allocate(this%domain_right_edge(3))
       allocate(this%current_time(1))
-      allocate(this%boundary_conditions(dimensionality*2))
+      allocate(this%boundary_conditions(6))
       allocate(this%unique_identifier)
    end subroutine gdf_parameters_init
 
