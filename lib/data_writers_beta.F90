@@ -1,10 +1,36 @@
 module gdf_datasets
+  ! This module contains routines to read and write 3D datasets in future it will 
+  ! also support parallel access.
+
   implicit none
 
   private
   public :: write_dataset
 
 contains
+
+  subroutine read_dataset(place, dname, data, plist_id)
+    use hdf5
+
+    implicit none
+
+    class(*), pointer, dimension(:, :, :), intent(out) :: data
+    integer(HID_T),                intent(in)     :: place             !< location to write dataset
+    character(len=*),              intent(in)     :: dname             !< name of dataset
+    integer(HID_T),                intent(inout)  :: plist_id          !< access property list id
+    
+    call h5dopen_f(place, dname, dataset_id, error, plist_id)
+
+    call h5dget_space_f(dataset_id, dataspace_id, error)
+
+    call h5sget_simple_extent_dims_f(dataspace_id, dims, maxdims, error)
+
+    print*, dims
+
+    call h5dclose_f(dataset_id, error)
+    
+  end subroutine read_dataset
+
 
   subroutine write_dataset(place, dname, data, plist_id)
     use hdf5

@@ -24,8 +24,8 @@ program test_read_gdf
   call h5fopen_f(filename, H5F_ACC_RDONLY_F, file_id, error)
 
   ! init the objects
-  call sp%init(dimensionality)
-  call rd%init(dimensionality, 1)
+  call sp%init()
+  call rd%init(1)
 
   ! Read all the meta data
   call gdf_read_file(file_id, software_name, software_version, rd, sp, field_types)
