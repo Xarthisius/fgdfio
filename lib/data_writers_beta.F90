@@ -14,7 +14,7 @@ contains
 
     implicit none
 
-    class(*), pointer, dimension(:, :, :), intent(out) :: data
+    class(*), pointer, dimension(:, :, :), intent(inout) :: data
     integer(HID_T),                intent(in)     :: place             !< location to write dataset
     character(len=*),              intent(in)     :: dname             !< name of dataset
     !integer(HID_T),                intent(inout)  :: plist_id          !< access property list id
@@ -29,20 +29,20 @@ contains
 
     call h5sget_simple_extent_dims_f(filespace_id, dims, maxdims, error)
 
-    print*, "_______________dataset_read___________________"
-    print*, dims
 
     ! Define datset hyperslab
 
     ! Define memory dataspace
-    call h5screate_simple_f(3, dims, memspace_id, error)
+    !call h5screate_simple_f(3, dims, memspace_id, error)
 
     select type (data)
     type is (real(kind=8))
+       print*, "_______________dataset_read___________________"
+       print*, dims
        allocate(data(1:dims(1), 1:dims(2), 1:dims(3)))
+       print*, shape(data)
        call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, dims, error)!, file_space=filespace_id)
     end select
-    
     call h5dclose_f(dataset_id, error)
     
   end subroutine read_dataset
