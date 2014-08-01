@@ -1,11 +1,12 @@
 program test_read_gdf
   use gdf
+  use gdf_datasets
   use hdf5
 
   implicit none
 
   integer(kind=4) :: error
-  integer(HID_T) :: file_id
+  integer(HID_T) :: file_id, dom_g_id, doml_g_id
 
   character(len=*), parameter :: filename='./test.gdf'
   character(len=60) :: software_name, software_version
@@ -16,6 +17,8 @@ program test_read_gdf
   type(gdf_root_datasets_T) :: rd
 
   type(gdf_field_type_T), dimension(:), allocatable :: field_types
+  class(*), dimension(:,:,:), pointer :: d_ptr
+  real(kind=8), dimension(:,:,:), allocatable, target :: read_data
 
   ! Open the interface
   call h5open_f(error)
@@ -37,6 +40,14 @@ program test_read_gdf
   print*, field_types(1)%variable_name, field_types(1)%field_name
 
   ! READ THE ACTUAL DATA HERE.  
+  ! Create field groups
+  call h5gopen_f(file_id, "data", dom_g_id, error) !Create /data
+  call h5gopen_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
+
+  d_ptr => read_data
+  call read_dataset(doml_g_id, 'velocity_x', d_ptr)
+  print*, maxval(read_data)
+  
   
   ! Close the file and interface
   call h5fclose_f(file_id, error)

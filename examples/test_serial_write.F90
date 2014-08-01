@@ -22,9 +22,9 @@ program test_read
    character(len=*), parameter                   :: software_version="ha what is a version"
    
    integer(kind=4), parameter                    :: dimensionality=2
-   integer(kind=8), dimension(dimensionality), parameter :: domain_dimensions=(/ 10, 10 /)
-   real(kind=8), dimension(10,10), target :: data
-   class(*), dimension(:, :), pointer :: d_ptr
+   integer(kind=8), dimension(3), parameter :: domain_dimensions=(/ 10, 10, 1 /)
+   real(kind=8), dimension(10,10, 1), target :: data
+   class(*), dimension(:, :, :), pointer :: d_ptr
 
    ! Simulation Parameters
    call gdf_sp%init()

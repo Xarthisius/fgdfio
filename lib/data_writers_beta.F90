@@ -22,8 +22,6 @@ contains
     integer(HID_T) :: dataset_id, dataspace_id, memspace_id, filespace_id
     integer(kind=8), dimension(3) :: dims, maxdims
     integer :: error
-    !TODO: type select this:
-    real(kind=8), dimension(:,:,:), allocatable, target :: read_data
     
     call h5dopen_f(place, dname, dataset_id, error)!, plist_id)
 
@@ -38,11 +36,13 @@ contains
 
     ! Define memory dataspace
     call h5screate_simple_f(3, dims, memspace_id, error)
-    allocate(read_data(1:dims(1), 1:dims(2), 1:dims(3)))
 
-    call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, read_data, dims, error)!, file_space=filespace_id)
-    data => read_data
-
+    select type (data)
+    type is (real(kind=8))
+       allocate(data(1:dims(1), 1:dims(2), 1:dims(3)))
+       call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, dims, error)!, file_space=filespace_id)
+    end select
+    
     call h5dclose_f(dataset_id, error)
     
   end subroutine read_dataset
