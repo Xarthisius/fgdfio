@@ -5,7 +5,7 @@ program test_read
 
    implicit none
 
-   character(len=*), parameter :: filename = "/home/stuart/GitHub/fgdfio/test.gdf"
+   character(len=*), parameter :: filename = "./test.gdf"
 
    type(gdf_root_datasets_T)                     :: rd
    type(gdf_parameters_T)                        :: gdf_sp

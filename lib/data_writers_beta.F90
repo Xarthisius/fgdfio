@@ -5,24 +5,23 @@ module gdf_datasets
   implicit none
 
   private
-  public :: write_dataset, read_dataset
+  public :: write_dataset, read_dataset, read_real_dataset
 
 contains
 
-  subroutine read_dataset(place, dname, data)!, plist_id)
+  subroutine read_real_dataset(place, dname, data)
     use hdf5
 
     implicit none
 
-    class(*), pointer, dimension(:, :, :), intent(inout) :: data
+    real(kind=8), dimension(:,:,:), allocatable, intent(out) :: data
     integer(HID_T),                intent(in)     :: place             !< location to write dataset
     character(len=*),              intent(in)     :: dname             !< name of dataset
-    !integer(HID_T),                intent(inout)  :: plist_id          !< access property list id
 
     integer(HID_T) :: dataset_id, dataspace_id, memspace_id, filespace_id
     integer(kind=8), dimension(3) :: dims, maxdims
     integer :: error
-    
+
     call h5dopen_f(place, dname, dataset_id, error)!, plist_id)
 
     call h5dget_space_f(dataset_id, filespace_id, error)
@@ -35,18 +34,13 @@ contains
     ! Define memory dataspace
     !call h5screate_simple_f(3, dims, memspace_id, error)
 
-    select type (data)
-    type is (real(kind=8))
-       print*, "_______________dataset_read___________________"
-       print*, dims
-       allocate(data(1:dims(1), 1:dims(2), 1:dims(3)))
-       print*, shape(data)
-       call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, dims, error)!, file_space=filespace_id)
-    end select
+    allocate(data(1:dims(1), 1:dims(2), 1:dims(3)))
+
+    call h5dread_f(dataset_id, H5T_NATIVE_DOUBLE, data, dims, error)!, file_space=filespace_id)
+    
     call h5dclose_f(dataset_id, error)
     
-  end subroutine read_dataset
-
+  end subroutine read_real_dataset
 
   subroutine write_dataset(place, dname, data, plist_id)
     use hdf5

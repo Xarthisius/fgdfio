@@ -44,9 +44,10 @@ program test_read_gdf
   call h5gopen_f(file_id, "data", dom_g_id, error) !Create /data
   call h5gopen_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
-  d_ptr => read_data
-  call read_dataset(doml_g_id, 'velocity_x', d_ptr)
-  print*, maxval(read_data)
+  !d_ptr => read_data
+  call read_real_dataset(doml_g_id, 'velocity_x', read_data)
+  !print*, shape(d_ptr)
+  print*, read_data
   
   
   ! Close the file and interface
