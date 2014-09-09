@@ -5,7 +5,7 @@ module gdf_datasets
   implicit none
 
   private
-  public :: write_dataset, read_dataset, read_real_dataset
+  public :: write_dataset, read_real_dataset
 
 contains
 
