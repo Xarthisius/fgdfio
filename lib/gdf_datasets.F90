@@ -5,11 +5,11 @@ module gdf_datasets
   implicit none
 
   private
-  public :: write_dataset, read_real_dataset
+  public :: write_dataset, read_real8_dataset
 
 contains
 
-  subroutine read_real_dataset(place, dname, data)
+  subroutine read_real8_dataset(place, dname, data)
     use hdf5
 
     implicit none
@@ -40,7 +40,7 @@ contains
     
     call h5dclose_f(dataset_id, error)
     
-  end subroutine read_real_dataset
+  end subroutine read_real8_dataset
 
   subroutine write_dataset(place, dname, data, plist_id)
     use hdf5
