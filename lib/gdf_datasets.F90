@@ -5,7 +5,11 @@ module gdf_datasets
   implicit none
 
   private
-  public :: write_dataset, read_real8_dataset
+  public :: write_dataset, read_dataset
+
+   interface read_dataset
+      module procedure read_real8_dataset
+   end interface
 
 contains
 
