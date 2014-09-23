@@ -2,6 +2,7 @@ program parallel_hfd5_write
   use mpi
   use hdf5
   use gdf
+  use gdf_datasets
 
   implicit none
 
@@ -9,6 +10,8 @@ program parallel_hfd5_write
 
   integer(HID_T) :: file_id       ! File identifier 
   integer(HID_T) :: plist_id      ! Property list identifier 
+  integer(HID_T)                                :: doml_g_id        !< domain list identifier
+  integer(HID_T)                                :: dom_g_id         !< domain group identifier
   integer        :: error
 
   !
@@ -25,6 +28,9 @@ program parallel_hfd5_write
   integer(kind=4), parameter                    :: dimensionality=2
   integer(kind=8), dimension(3), parameter :: domain_dimensions=(/ 10, 10, 1 /)
   
+  real(kind=8), dimension(10,10, 1), target :: data
+  class(*), dimension(:, :, :), pointer :: d_ptr
+
   !
   ! MPI definitions and calls.
   !
@@ -51,7 +57,7 @@ program parallel_hfd5_write
   !
   ! Create the file collectively.
   ! 
-  call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, error, access_prp = plist_id)
+  call h5fcreate_f(filename, H5F_ACC_TRUNC_F, file_id, error, access_prp=plist_id)
 
   ! Simulation Parameters
   call gdf_sp%init()
@@ -88,7 +94,26 @@ program parallel_hfd5_write
 
 
   ! Write everything to the file
-  call gdf_write_file(file_id, software_name, software_version, rd, gdf_sp, field_types, access_prp = plist_id)
+  call gdf_write_file(file_id, software_name, software_version, rd, gdf_sp, field_types)
+
+  ! Now write the datasets
+  ! Create field groups
+  call h5gcreate_f(file_id, "data", dom_g_id, error) !Create /data
+  call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
+  
+  ! WRITE ACTUAL DATA HERE
+  ! Create property list for collective dataset write
+  call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error)
+  !call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, error)
+
+  d_ptr => data
+  call write_dataset(doml_g_id, 'velocity_x', d_ptr, xfer_prp=plist_id)
+
+  !
+  ! Close Groups
+  !
+  call h5gclose_f(dom_g_id, error)
+  call h5gclose_f(doml_g_id, error)
 
   !
   ! Close property list and the file.

@@ -82,6 +82,10 @@ program test_read
    d_ptr => data
    call write_dataset(doml_g_id, 'velocity_x', d_ptr, plist_id)
 
+   ! Close Groups
+   call h5gclose_f(dom_g_id, error)
+   call h5gclose_f(doml_g_id, error)
+   
    call h5fclose_f(file_id, error)
    call h5close_f(error)
 
