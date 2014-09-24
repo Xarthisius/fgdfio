@@ -9,10 +9,10 @@ program parallel_hfd5_write
   character(LEN=10), parameter :: filename = "sds.h5"  ! File name
 
   integer(HID_T) :: file_id       ! File identifier 
-  integer(HID_T) :: plist_id      ! Property list identifier 
+  integer(HID_T) :: plist_id, xfer_prp      ! Property list identifier 
   integer(HID_T)                                :: doml_g_id        !< domain list identifier
   integer(HID_T)                                :: dom_g_id         !< domain group identifier
-  integer        :: error
+  integer        :: error, i, j
 
   !
   ! GDF Vars
@@ -26,9 +26,11 @@ program parallel_hfd5_write
   character(len=*), parameter                   :: software_version="ha what is a version"
   
   integer(kind=4), parameter                    :: dimensionality=2
-  integer(kind=8), dimension(3), parameter :: domain_dimensions=(/ 10, 10, 1 /)
+  integer(kind=8), dimension(3) :: domain_dimensions=(/ 12, 12, 1 /)
+  integer(kind=8), dimension(3) :: count, offset
   
-  real(kind=8), dimension(10,10, 1), target :: data
+  real(kind=8), dimension(3, 3, 1), target :: rank_data
+  real(kind=8), dimension(12, 12, 1), target :: data
   class(*), dimension(:, :, :), pointer :: d_ptr
 
   !
@@ -88,9 +90,9 @@ program parallel_hfd5_write
   call field_types(1)%init()
   field_types(1)%field_to_cgs = 1
   field_types(1)%staggering = 0
-  field_types(1)%field_units = "m/s"
-  field_types(1)%variable_name = "velocity_x"
-  field_types(1)%field_name = "Velocity in the x direction"
+  field_types(1)%field_units = "kg/m^3"
+  field_types(1)%variable_name = "density"
+  field_types(1)%field_name = "Density"
 
 
   ! Write everything to the file
@@ -100,14 +102,33 @@ program parallel_hfd5_write
   ! Create field groups
   call h5gcreate_f(file_id, "data", dom_g_id, error) !Create /data
   call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
-  
+
+  ! Build some data
+  do i=1,12
+     do j=1,12
+        data(i,j,1) = 10.0 - sqrt((real(i) - 6.)**2 + (real(j) - 6.)**2) 
+     end do
+  end do 
+
+  ! Set up the splits
+  count = (/ 12, 1, 1 /)
+  count(2) = domain_dimensions(2) / mpi_size
+  offset = (/ 0, 0, 0 /)
+  offset(2) = mpi_rank * count(2)
+  if (mpi_rank .eq. 0) then
+     print*, count
+  end if
+  print*, mpi_rank, offset(1:2), offset(1:2)+count(1:2)
+
   ! WRITE ACTUAL DATA HERE
   ! Create property list for collective dataset write
-  call h5pcreate_f(H5P_DATASET_XFER_F, plist_id, error)
-  !call h5pset_dxpl_mpio_f(plist_id, H5FD_MPIO_COLLECTIVE_F, error)
+  call h5pcreate_f(H5P_DATASET_XFER_F, xfer_prp, error)
+  call h5pset_dxpl_mpio_f(xfer_prp, H5FD_MPIO_COLLECTIVE_F, error)
 
+  !count = (/ 12, 12, 1 /)
+  !offset = (/ 0,0,0/)
   d_ptr => data
-  call write_dataset(doml_g_id, 'velocity_x', d_ptr, xfer_prp=plist_id)
+  call write_dataset(doml_g_id, 'density', d_ptr, file_dims=domain_dimensions, xfer_prp=xfer_prp, count=count, offset=offset)
 
   !
   ! Close Groups

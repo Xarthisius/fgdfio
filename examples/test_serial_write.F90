@@ -15,7 +15,7 @@ program test_read
    integer(HID_T)                                :: ft_g_id          !< field_types group
    integer(HID_T)                                :: doml_g_id        !< domain list identifier
    integer(HID_T)                                :: dom_g_id         !< domain group identifier
-   integer(kind=4)                               :: error
+   integer(kind=4)                               :: error, i, j
 
    ! Start defining stuff to put into the file
    character(len=*), parameter                   :: software_name="SAC"
@@ -23,7 +23,7 @@ program test_read
    
    integer(kind=4), parameter                    :: dimensionality=2
    integer(kind=8), dimension(3), parameter :: domain_dimensions=(/ 10, 10, 1 /)
-   real(kind=8), dimension(10,10, 1), target :: data
+   real(kind=8), dimension(10, 10, 1), target :: data
    class(*), dimension(:, :, :), pointer :: d_ptr
 
    ! Simulation Parameters
@@ -78,9 +78,15 @@ program test_read
    call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
    ! WRITE ACTUAL DATA HERE
+  ! Build some data
+   do i=1,10
+      do j=1,10
+         data(i,j,1) = 10.0 - sqrt((real(i) - 4.5)**2 + (real(j) - 4.5)**2) 
+      end do
+   end do
 
    d_ptr => data
-   call write_dataset(doml_g_id, 'velocity_x', d_ptr, plist_id)
+   call write_dataset(doml_g_id, 'velocity_x', d_ptr)
 
    ! Close Groups
    call h5gclose_f(dom_g_id, error)
