@@ -29,8 +29,7 @@ program parallel_hfd5_write
   integer(kind=8), dimension(3) :: domain_dimensions=(/ 12, 12, 1 /)
   integer(kind=8), dimension(3) :: count, offset
   
-  real(kind=8), dimension(3, 3, 1), target :: rank_data
-  real(kind=8), dimension(12, 12, 1), target :: data
+  real(kind=8), dimension(12, 3, 1), target :: rank_data
   class(*), dimension(:, :, :), pointer :: d_ptr
 
   !
@@ -103,13 +102,6 @@ program parallel_hfd5_write
   call h5gcreate_f(file_id, "data", dom_g_id, error) !Create /data
   call h5gcreate_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
-  ! Build some data
-  do i=1,12
-     do j=1,12
-        data(i,j,1) = 10.0 - sqrt((real(i) - 6.)**2 + (real(j) - 6.)**2) 
-     end do
-  end do 
-
   ! Set up the splits
   count = (/ 12, 1, 1 /)
   count(2) = domain_dimensions(2) / mpi_size
@@ -118,16 +110,17 @@ program parallel_hfd5_write
   if (mpi_rank .eq. 0) then
      print*, count
   end if
-  print*, mpi_rank, offset(1:2), offset(1:2)+count(1:2)
+
+  ! Fill up this processes' array with the data for this process.
+  rank_data = mpi_rank
+
 
   ! WRITE ACTUAL DATA HERE
   ! Create property list for collective dataset write
   call h5pcreate_f(H5P_DATASET_XFER_F, xfer_prp, error)
   call h5pset_dxpl_mpio_f(xfer_prp, H5FD_MPIO_COLLECTIVE_F, error)
 
-  !count = (/ 12, 12, 1 /)
-  !offset = (/ 0,0,0/)
-  d_ptr => data
+  d_ptr => rank_data
   call write_dataset(doml_g_id, 'density', d_ptr, file_dims=domain_dimensions, xfer_prp=xfer_prp, count=count, offset=offset)
 
   !

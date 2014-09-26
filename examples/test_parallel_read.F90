@@ -26,7 +26,7 @@ program parallel_hfd5_write
   ! MPI definitions and calls.
   !
   integer :: mpierror       ! MPI error flag
-  integer :: comm, info
+  integer :: comm, info, i, batton, status(MPI_STATUS_SIZE)
   integer :: mpi_size, mpi_rank
   comm = MPI_COMM_WORLD
   info = MPI_INFO_NULL
@@ -73,8 +73,36 @@ program parallel_hfd5_write
   call h5gopen_f(dom_g_id, "grid_0000000000", doml_g_id, error) !Create the top grid
 
   call read_dataset(doml_g_id, 'density', read_data, offset=offset, count=count, xfer_prp=xfer_prp)
-  print*, shape(read_data)
-  print*, read_data
+  
+  ! Print the read in data in rank order
+  if (mpi_rank .eq. 0) then
+     batton = 1
+     do i=1,12
+        print '(I2, 3F10.5)', i, read_data(i,1:3,1)
+     end do
+     print*, ''
+     call MPI_SEND(batton, 1, MPI_INTEGER, 1, 1, comm, error)
+  else if (mpi_rank .eq. 1) then
+     call MPI_RECV(batton, 1, MPI_INTEGER, 0, 1, comm, status, error)
+     do i=1,12
+        print '(I2, 3F10.5)', i, read_data(i,1:3,1)
+     end do
+     print*, ''
+     call MPI_SEND(batton, 1, MPI_INTEGER, 2, 1, comm, error)
+  else if (mpi_rank .eq. 2) then
+     call MPI_RECV(batton, 1, MPI_INTEGER, 1, 1, comm, status, error)
+     do i=1,12
+        print '(I2, 3F10.5)', i, read_data(i,1:3,1)
+     end do
+     print*, ''
+     call MPI_SEND(batton, 1, MPI_INTEGER, 3, 1, comm, error)
+  else if (mpi_rank .eq. 3) then
+     call MPI_RECV(batton, 1, MPI_INTEGER, 2, 1, comm, status, error)
+     do i=1,12
+        print '(I2, 3F10.5)', i, read_data(i,1:3,1)
+     end do
+     print*, ''
+  end if
 
   !
   ! Close Groups
