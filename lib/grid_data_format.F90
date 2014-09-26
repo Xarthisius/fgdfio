@@ -90,10 +90,10 @@ contains
     call gdf_read_simulation_parameters(file_id, gdf_sp)
     
     ! Write root datasets
-    call gdf_read_root_datasets(file_id, gdf_rd)
+    !call gdf_read_root_datasets(file_id, gdf_rd)
     
     ! Write field types
-    call gdf_read_field_types(file_id, field_types)
+    !call gdf_read_field_types(file_id, field_types)
     
     ! Write empty particle_types groups
     !call gdf_create_particle_types(file_id)

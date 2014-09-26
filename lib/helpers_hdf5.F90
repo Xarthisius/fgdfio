@@ -587,6 +587,9 @@ contains
     
     f_ptr = c_loc(str_array(1)(1:1))
     call h5aread_f(attr_id, memtype, f_ptr, error)
+
+    call h5sclose_f(aspace, error)
+    call h5aclose_f(attr_id, error)
     
   end subroutine read_str_array_attribute
   
@@ -621,6 +624,9 @@ contains
     
     f_ptr = c_loc(str_array)
     call h5aread_f(attr_id, memtype, f_ptr, error)
+
+    call h5sclose_f(aspace, error)
+    call h5aclose_f(attr_id, error)
     
   end subroutine read_str_attribute
 
@@ -658,8 +664,9 @@ contains
     f_ptr = c_loc(int_array(1))
 
     call h5aread_f(attr_id, H5T_NATIVE_INTEGER, f_ptr, error)
-    call h5aclose_f(attr_id, error)
+
     call h5sclose_f(aspace_id, error)
+    call h5aclose_f(attr_id, error)
     
   end subroutine read_int4_attribute
   
@@ -695,8 +702,9 @@ contains
     f_ptr = c_loc(int_array(1))
 
     call h5aread_f(attr_id, H5T_STD_I64LE, f_ptr, error)
-    call h5aclose_f(attr_id, error)
+
     call h5sclose_f(aspace_id, error)
+    call h5aclose_f(attr_id, error)
     
   end subroutine read_int8_attribute
 
@@ -734,8 +742,9 @@ contains
     f_ptr = c_loc(real_array(1))
 
     call h5aread_f(attr_id, H5T_NATIVE_DOUBLE, f_ptr, error)
-    call h5aclose_f(attr_id, error)
+
     call h5sclose_f(aspace_id, error)
+    call h5aclose_f(attr_id, error)
     
   end subroutine read_real8_attribute
 
